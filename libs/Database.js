@@ -1,8 +1,12 @@
+let Event = require("events");
 let Indexer = require("./Indexer");
 let Persistent = require("./Persistent");
+let Model = require("./Model");
 
-class Database {
+class Database extends Event.EventEmitter {
     constructor(options){
+        super();
+
         if(typeof options == "string"){
             this.filename = options;
         }else{
@@ -15,11 +19,23 @@ class Database {
 
         this._indexer = new Indexer();
         this._persistent = new Persistent(this.filename);
+        this.model = new Model({
+            timestampData:this.timestampData,
+        });
+    }
+
+    async loadDatabase(cb){
+        return new Promise(async (resolve,reject)=>{
+            let data = await this._persistent.loadDatabase();
+            console.log(data);
+            
+        })
     }
 
     insert(newDoc){
-        let indexedDocs = this._addToCache(newDoc);
-        this._addCacheToPersistent(indexedDocs);           
+        let preparedDoc = this.model.prepareDoc(newDoc);
+        this._addToCache(preparedDoc);
+        this._addCacheToPersistent(preparedDoc);           
     }
 
     _addToCache(doc){

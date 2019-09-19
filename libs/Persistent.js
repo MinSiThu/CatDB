@@ -5,8 +5,13 @@ class Persistent{
         this._persistentFilename = `${dbname}.catdb.binary`;
     }
 
+    async loadDatabase(){
+        let data = await Storage.readHex(this._persistentFilename);
+        return data;
+    }
+
     persist(doc){
-        Storage.writeBinary(this._persistentFilename,doc);
+        Storage.writeHex(this._persistentFilename,JSON.stringify(doc.cleanedDoc));
     }
 
     _appendBinary(){
