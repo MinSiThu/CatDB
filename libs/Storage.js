@@ -19,7 +19,7 @@ Storage.writeHex = function(filename,data){
     let buffer = this._toBufferFromUTF8(data).toString("hex");
 
     try{        
-        fs.writeFile(path.join(__dirname,filename),buffer,(err,data)=>{
+        fs.writeFile(path.join(__dirname,filename),buffer,{'flag':'a'},(err,data)=>{
             if(err){
                 throw new Error(err);
             }        
