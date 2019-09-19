@@ -2,6 +2,8 @@ let Event = require("events");
 let Indexer = require("./Indexer");
 let Persistent = require("./Persistent");
 let Model = require("./Model");
+let Query = require("./Query");
+let Executer = require("./Executer");
 
 class Database extends Event.EventEmitter {
     constructor(options){
@@ -19,31 +21,35 @@ class Database extends Event.EventEmitter {
 
         this._indexer = new Indexer();
         this._persistent = new Persistent(this.filename);
-        this.model = new Model({
+        this._model = new Model({
             timestampData:this.timestampData,
         });
+        this._Query = Query;
+        this._executer = new Executer(this._indexer);
     }
 
-    async loadDatabase(cb){
+    async loadDatabase(){
         let THIS = this;
-        return new Promise(async (resolve,reject)=>{
-            try{
-                let data = await this._persistent.loadDatabase();                
-                if(typeof cb == "function"){
-                    cb(null)
-                }else{
-                    THIS._loadDocs(data);
-                    resolve();
-                }
-            }catch(e){
-                if(typeof cb == "function"){
-                    THIS._loadDocs(data);
-                    cb(e)
-                }else{
-                    reject(e);
-                }
-            }
-        })
+        try{
+            let data = await THIS._persistent.loadDatabase();                
+            THIS._loadDocs(data);
+            THIS.emit("load");
+        }catch(e){
+            THIS.emit("error",e);
+        }
+    }
+
+    insert(newDoc){
+        let preparedDoc = this._model.prepareDoc(newDoc);
+        this._addToCache(preparedDoc);
+        this._addCacheToPersistent(preparedDoc);
+        return preparedDoc.cleanedDoc;           
+    }
+
+    async find(query){
+        let preparedQuery =  this._Query.prepare(query);
+        let result = this._executer.exe(preparedQuery);
+        return result
     }
 
     _loadDocs(docStrings){
@@ -52,13 +58,6 @@ class Database extends Event.EventEmitter {
             return JSON.parse(docString);
         })
         this._indexer.insertDocs(preparedDocs);
-    }
-
-    insert(newDoc){
-        let preparedDoc = this.model.prepareDoc(newDoc);
-        this._addToCache(preparedDoc);
-        this._addCacheToPersistent(preparedDoc);
-        return preparedDoc.cleanedDoc;           
     }
 
     _addToCache(doc){
