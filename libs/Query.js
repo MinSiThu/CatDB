@@ -1,9 +1,10 @@
 class Query {
-    constructor(){
-
+    constructor(operation,query,options){
+        this.executeStack = [];
+        this.operationType = operation;
     }
 
-    prepareQuery(){
+    prepareQuery(operation,query,options){
         
     }
 }

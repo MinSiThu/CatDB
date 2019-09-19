@@ -6,6 +6,13 @@ class Model{
         this.timestampData = options.timestampData||false;
     }
 
+    prepareLoadedDoc(doc){
+        return {
+            key:doc._id,
+            cleanedDoc:doc
+        }
+    }
+
     /**
      * return prepared Document
      * @param {object} doc 

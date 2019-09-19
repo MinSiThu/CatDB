@@ -3,7 +3,8 @@ let Indexer = require("./Indexer");
 let Persistent = require("./Persistent");
 let Model = require("./Model");
 let Query = require("./Query");
-let Executer = require("./Executer");
+let Executor = require("./Executor");
+let util = require("util");
 
 class Database extends Event.EventEmitter {
     constructor(options){
@@ -25,7 +26,7 @@ class Database extends Event.EventEmitter {
             timestampData:this.timestampData,
         });
         this._Query = Query;
-        this._executer = new Executer(this._indexer);
+        this._executor = new Executor(this._indexer);
     }
 
     async loadDatabase(){
@@ -40,24 +41,36 @@ class Database extends Event.EventEmitter {
     }
 
     insert(newDoc){
-        let preparedDoc = this._model.prepareDoc(newDoc);
-        this._addToCache(preparedDoc);
-        this._addCacheToPersistent(preparedDoc);
-        return preparedDoc.cleanedDoc;           
+        if(util.isArray(newDoc)){
+            return newDoc.map(doc=>{
+                return this._insertOne(doc);
+            })
+        }else if(util.isObject(newDoc)){
+            return this._insertOne(newDoc);
+        }        
     }
 
-    async find(query){
-        let preparedQuery =  this._Query.prepare(query);
-        let result = this._executer.exe(preparedQuery);
+    _insertOne(newDoc){
+        let preparedDoc = this._model.prepareDoc(newDoc);
+      //  console.log(preparedDoc);
+        
+        this._addToCache(preparedDoc);
+        this._addCacheToPersistent(preparedDoc);
+        return preparedDoc.cleanedDoc;
+    }
+
+    async find(query,options){
+        let preparedQuery =  this._Query.prepare("find",query,options);
+        let result = this._executor.exe(preparedQuery);
         return result
     }
 
     _loadDocs(docStrings){
         let THIS = this;        
         let preparedDocs = docStrings.map(docString=>{
-            return JSON.parse(docString);
+            return THIS._model.prepareLoadedDoc(JSON.parse(docString)); 
         })
-        this._indexer.insertDocs(preparedDocs);
+        this._indexer.insertLoadedDocs(preparedDocs);
     }
 
     _addToCache(doc){

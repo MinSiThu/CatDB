@@ -1,4 +1,4 @@
-class Executer {
+class Executor {
     constructor(indexer){
         this._indexer = indexer;
     }
@@ -8,4 +8,4 @@ class Executer {
     }
 }
 
-module.exports = Executer;
+module.exports = Executor;

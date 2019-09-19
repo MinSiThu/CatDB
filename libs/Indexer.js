@@ -1,17 +1,26 @@
 let BinarySearchTree = require("binary-search-tree").AVLTree;
+let compareKey = (a,b)=>{
+    console.log(a,b);
+    
+    if (a < b) { return -1; }
+    if (a > b) { return 1; }
+    return 0;
+}
 
 class Indexer {
     constructor(){
-        this._bst = new BinarySearchTree();
+        this._bst = new BinarySearchTree(compareKey);
+        this._keys = [];
     }
 
-    insert(doc){
-        let {_id,cleanedDoc} = doc;
-        this._bst.insert(_id,cleanedDoc);
+    insert(doc){        
+        let {key,cleanedDoc} = doc;
+        this._keys.push(key);
+        this._bst.insert(key,cleanedDoc);
     }
 
-    insertDocs(docs){
-        docs.forEach(doc => {
+    insertLoadedDocs(docs){
+        docs.forEach(doc =>{
             this.insert(doc);
         });
     }
